@@ -18,7 +18,7 @@ The projects here include exploratory analyses, methodological demos, prototype 
 
 ---
 
-## 01-spatial-transcriptomics/
+## spatial-transcriptomics/
 
 This directory contains analysis workflows and demos related to spatial transcriptomics.
 
