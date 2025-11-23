@@ -1,0 +1,166 @@
+---
+title: "spatialLIBD Workflow Demonstration"
+subtitle: "DLPFC Visium Data via ExperimentHub"
+author: "Chayce Reed"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: false
+    theme: readable
+    df_print: paged
+---
+
+This notebook demonstrates how to use the spatialLIBD package with publicly available DLPFC Visium data accessed via ExperimentHub. It covers loading preprocessed data, exploring object structure, visualizing layers and gene expression, and accessing precomputed modeling results for layer-enriched genes.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+Load the required packages.
+
+```{r}
+library(spatialLIBD) # main package, for spatial transcriptomics analysis & visualization
+library(SpatialExperiment) # data container, object structure
+library(scater) # basic QC, normalization, dimensionality reduction
+```
+
+## Load Data
+
+```{r}
+# lets fetch one of the public datasets
+# uses a cached copy after first download
+spe <- spatialLIBD::fetch_data(type = "spe")
+# this is the preprocessed DLPFC visium dataset
+# stored as a spatialexperiment object
+# commonly used for practicing, testing, benchmarking new computational methods
+spe
+```
+
+```{r}
+# now lets fetch a reference dataset
+# i believe this one was manually annotated for layers
+# this is a commonly used companion to the spe dataset above
+# used as a reference for layer marker discovery and benchmarking new methods
+sce_layer <- spatialLIBD::fetch_data(type = "sce_layer")
+sce_layer
+```
+
+## Explore Object Structure
+
+```{r}
+# lets take a look at the assays stored in the spe object
+assayNames(spe) # counts & logcounts
+
+# lets take a look at the columns in the spe object
+colnames(colData(spe)) # sample ids, qc metrics, precomputed annotations, markers
+```
+
+## Visualize Layers
+
+```{r}
+# vis_clus() creates a spatial cluster plot
+# tissue image + all the spots + colored by clustervar
+spatialLIBD::vis_clus(
+    spe = spe, # spatialexperiment object, data
+    clustervar = "layer_guess_reordered", # which column in spe for the cluster/layer
+    sampleid = "151673", # specific sample / tissue section
+    colors = libd_layer_colors, # color palette
+    title = " spe layers" # title
+)
+
+# optionally save the figure:
+# ggsave("figures/qc_spe_layers.png", width = 6, height = 4)
+```
+
+## Visualize Gene Expression
+
+```{r}
+# vis_gene() is used to plot expression for a specific gene
+spatialLIBD::vis_gene(
+    spe = spe, # spatialexperiment object
+    sampleid = "151673", # specific sample / tissue section
+    geneid = "ENSG00000132639", # gene SNAP25
+    viridis = FALSE # color palette
+)
+
+# optionally save the figure:
+# ggsave("figures/spatial_snap25.png", width = 6, height = 4)
+```
+
+```{r}
+# vis_gene() is used to plot expression for a specific gene
+spatialLIBD::vis_gene(
+    spe = spe, # spatialexperiment object / data
+    sampleid = "151673", # specific sample / tissue section
+    geneid = "ENSG00000168314", # gene MOBP
+    viridis = FALSE # color palette
+)
+
+# optionally save the figure:
+# ggsave("figures/spatial_mobp.png", width = 6, height = 4)
+```
+
+```{r}
+# vis_gene() is used to plot expression for a specific gene
+spatialLIBD::vis_gene(
+    spe = spe, # spatialexperiment object / data
+    sampleid = "151673", # specific sample / tissue section
+    geneid = "ENSG00000183036", # gene PCP4
+    viridis = FALSE # color palette
+)
+
+# optionally save the figure:
+# ggsave("figures/spatial_pcp4.png", width = 6, height = 4)
+```
+## Modeling Results and Significant Genes
+
+```{r}
+# modeling_results fetches a precomputed modeling results object
+# statistical model ouputs used in the Maynard et al. (2021) DLPFC spatial transcriptomics analysis paper
+# modeling_results is the results of the statistical layer-level modeling used in the original DLPFC analysis.
+# this allows us to benchmark our own methods and compare it to the precomputed results 
+# (likely outdated? need to see if this is kept up-to-date)
+modeling_results <- spatialLIBD::fetch_data("modeling_results")
+# head(modeling_results)
+```
+
+```{r}
+# sig_genes_extract_all() extracts significant layer enriched genes, based on the 
+# precomputed statistical models and data
+# finds the top genes that differentiate the layers
+system.time( # this just measures the time it takes to run
+    sig_genes <-
+        spatialLIBD::sig_genes_extract_all(
+            n = nrow(sce_layer), # matches the number of layers that were in our reference
+            modeling_results = modeling_results,
+            sce_layer = sce_layer
+        )
+)
+
+head(sig_genes)
+```
+
+```{r}
+## Create a boxplot of the first gene in `sig_genes`.
+# set.seed(20200206)
+# lets create a boxplot for a specific gene (MOBP) to compare it across layers
+spatialLIBD::layer_boxplot(sig_genes = sig_genes[sig_genes$gene == "MOBP",], sce_layer = sce_layer)
+
+# optionally save the figure:
+# ggsave("figures/boxplot_mobp.png", width = 6, height = 4)
+```
+
+## Interactive App (Optional)
+
+```{r}
+# spatialLIBD::run_app(spe = spe, sce_layer = sce_layer, launch.browser = TRUE)
+```
+
+## Session Info
+
+```{r}
+# session info
+sessioninfo::session_info()
+```

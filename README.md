@@ -10,7 +10,7 @@ The projects here include exploratory analyses, methodological demos, prototype 
 
 ```text
 .
-├── 01-spatial-transcriptomics/
+├── spatial-transcriptomics/
 │   ├── seurat-demo/
 │   └── spatiallibd-demo/
 └── README.md
