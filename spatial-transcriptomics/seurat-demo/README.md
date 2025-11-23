@@ -5,26 +5,26 @@ The notebook walks through QC, normalization, PCA, UMAP, clustering, and marker 
 
 <img src="figures/spatial_feature.png" height="500">
 
-<br />
+---
 
-## 📁 Contents
+## Contents
 
 - **seurat_demo.Rmd** — source notebook  
 - **seurat_demo.html** — rendered analysis (plots + output)  
 - **figures/** — exported figures from the notebook  
 - **README.md** — this file
 
-<br />
+---
 
-## 🔍 View the Analysis
+## View the Analysis
 
 Open the full HTML notebook here:
 
-👉 **`seurat_demo.html`**
+**`seurat_demo.html`**
 
 (Click “Download” or “Raw” on GitHub if your browser does not display it directly.)
 
-<br />
+---
 
 ## ▶️ Running the Notebook Yourself
 
@@ -41,9 +41,9 @@ data_dir <- "data/V1_Adult_Mouse_Brain_Coronal_Section_1"
 
 4. Knit the notebook to HTML.
 
-<br />
+---
 
-## 📦 Data
+## Data
 
 Raw Visium data is **not included** in this repository due to size and licensing constraints.  
 Users must download the data directly from 10x Genomics.
