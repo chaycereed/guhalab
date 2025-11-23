@@ -1,8 +1,14 @@
 ---
-title: "Seurat Demo with Visium Data"
+title: "Seurat Visium Workflow Demonstration"
+subtitle: "Spatial Transcriptomics Processing & Visualization"
 author: "Chayce Reed"
-date: "2025-10-30"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: false
+    theme: readable
+    df_print: paged
 ---
 
 This notebook demonstrates a basic Seurat workflow using Visium spatial transcriptomics data (10x Genomics). It includes QC, normalization, dimensionality reduction, clustering, and marker discovery.
