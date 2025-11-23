@@ -1,0 +1,31 @@
+# Ignore raw data and large files
+data/
+*.h5
+*.h5ad
+*.mtx
+*.rds
+*.loom
+*.csv.gz
+*.tar.gz
+*.zip
+
+# Ignore RStudio metadata
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Ignore HTML preview artifacts if regenerated locally
+*.utf8.md
+*.knit.md
+
+# Ignore automatic figure directories created by knitr
+*_files/
+*_cache/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore temporary files
+*.tmp
+*.swp

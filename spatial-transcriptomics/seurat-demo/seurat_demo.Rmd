@@ -1,0 +1,314 @@
+---
+title: "Seurat Demo with Visium Data"
+author: "Chayce Reed"
+date: "2025-10-30"
+output: html_document
+---
+
+This notebook demonstrates a basic Seurat workflow using Visium spatial transcriptomics data (10x Genomics). It includes QC, normalization, dimensionality reduction, clustering, and marker discovery.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+Load the required packages.
+
+```{r}
+library(Seurat) # main package, for spatial transcriptomics analysis
+library(ggplot2) # for data exploration and quality control visualization
+library(dplyr) # data manipulation for filtering and transforming data
+```
+
+## Load Data
+Load the raw spatial gene expression data from 10x Genomics Visium using the Load10X_Spatial() function.
+
+```{r}
+# path to the folder containing Visium raw data
+# (user must download from 10x Genomics)
+data_dir <- "data/V1_Adult_Mouse_Brain_Coronal_Section_1"
+
+brain_coronal <- Load10X_Spatial(
+  data.dir = data_dir,
+  filename = "V1_Adult_Mouse_Brain_Coronal_Section_1_raw_feature_bc_matrix.h5"
+)
+```
+
+## Quality Control
+Now that the data is loaded, let's do a quick inspection of the structure and quality of the data.
+
+```{r}
+# quick overview of the Seurat object, including the number of features (genes) and observations (spots)
+print(brain_coronal)
+
+# confirm dimensions of the underlying gene expression matrix
+dim(brain_coronal)
+
+# summarize the counts and feature information
+summary(brain_coronal@meta.data$nCount_Spatial)
+summary(brain_coronal@meta.data$nFeature_Spatial)
+
+# quick view of the first few rows of the metadata, such as total counts and number of features
+head(brain_coronal@meta.data)
+
+# show the distribution of the counts and the features
+# useful for detecting outliers or uneven sequencing depth
+# the distributions help decide how to filter low-quality spots before normalization
+# typical thresholds: 
+# nCount_Spatial -> filter out spots with fewer than ~500-1000 total spots
+# nFeature_Spatial -> filter out spots with fewer than ~200-500 detected genes
+VlnPlot(brain_coronal, features = c("nCount_Spatial", "nFeature_Spatial"))
+
+# optionally save the figure:
+# ggsave("figures/qc_violin.png", width = 6, height = 4)
+
+SpatialFeaturePlot(
+  brain_coronal,
+  features = c("nFeature_Spatial", "nCount_Spatial")
+)
+
+# optionally save the figure:
+# ggsave("figures/qc_spatial_feature.png", width = 6, height = 4)
+```
+
+## Normalization
+Normalization adjusts for differences in sequencing depth between spots so that expression values can be meaningfully compared across the tissue.
+The output of NormalizeData() replaces the raw counts in the Seurat object with a new "normalized" assay that can be used for downstream steps such as finding variable features and scaling.
+
+**Why this matters:** Normalization ensures that observed differences in gene expression reflect true biological variation, not technical differences in sequencing depth or spot capture efficiency.
+
+```{r}
+# NormalizeData() performs global scaling normalization on the raw count matrix
+brain_coronal <- NormalizeData(brain_coronal,
+                            # LogNormalize normalizes each spot by:
+                            # 1) dividing each gene's counts by the total counts for that spot (to account for sequencing depth)
+                            # 2) multiplying by a scale factor (commonly 10,000) to bring all spots to a comparable range
+                            # 3) taking the natual log of the result to stabilize variance and reduce the effect of highly expressed genes
+                            normalization.method = "LogNormalize",
+                            scale.factor = 10000)
+
+# SCTransform() is also a normalization approach, that is often the modern recommendation (still need to look into it further)
+# SCTransform() handles the unique technical characteristics for spatial data better (better at handling technical noise and removing confounding variation)
+# SCTransform() handles the NormalizeData(), FindVariableFeatures() and ScaleData() workflow in a single call
+# For example:
+# bbrain_corona <- SCTransform(brain_post, assay = "Spatial")
+```
+
+## Variable Features
+After normalization, the next step is to identify the genes that show the most variation across spots.
+These are likely to capture meaningful biological differences rather than background noise.
+
+**Why this matters:** Not all genes contribute equally to distinguishing cell types or tissue regions (many are stably expressed "housekeeping" events).
+Focusing on variable genes improves the sensitivity and efficiency of downstream steps like PCA (dimensionality reduction) and clustering, helping reveal the major biological patterns in the spatial data.
+
+```{r}
+# FindVariableFeatures() selects genes with the highest variability across spots, which helps focus the analysis on biologically informative genes
+brain_coronal <- FindVariableFeatures(brain_coronal,
+                                   # vst (variance-stabilizing transformation) method identifies variable genes efficiently and is the default, robust choice for most datasets
+                                   selection.method = "vst",
+                                   # keeps the 2,000 most variable genes, a common balance between capturing signal and avoiding noise 
+                                   nFeatures = 2000)
+```
+
+## Scaling
+Scaling standardizes the expression values of each gene so that all genes contribute equally to downstream analyses like PCA and clustering.
+
+**Why this matters:** Many statistical methods, including PCA, assuming data are on the same scale. Scaling removes technical bias and helps PCA focus on the most biological informative variation rather than raw expression magnitude.
+
+```{r}
+# ScaleData() centers and scale the expression value for each gene across all spots
+# Centering: subtracts the mean expression of each gene, setting the mean to zero
+# Scaling: divides by the standard deviation, giving each gene a variance of one
+brain_coronal <- ScaleData(brain_coronal)
+```
+
+## PCA
+Next, we can reduce the dataset's dimensionality using PCA.
+
+**Why this matters:** PCA helps uncover the major axes of variation in the dataset, patterns that distinguish groups of spots or tissue regions based on their gene expression.
+It transforms the data into a space where the first few PCs capture the strongest sources of biological signal (e.g., cell type or spatial region), while minimaizng noise.
+
+```{r}
+# RunPCA() performs linear dimensionality reduction, summarizing thousands of gene expression values into a smaller number of composite variables called principal compnents (PCs)
+brain_coronal <- RunPCA(brain_coronal,
+                     # feaures argument specifies that PCA should be run only on the most variable genes, since those drive the most informative biological variation
+                     features = VariableFeatures(brain_coronal),
+                     # FALSE simply hides progress messages for cleaner output
+                     verbose = FALSE)
+
+# Access PCA loadings and embeddings
+# pca_loadings represents gene weights (contribution to PCAs)
+pca_loadings <- brain_coronal[["pca"]]@feature.loadings
+# rows = genes, columns = PCAs
+head(pca_loadings)
+
+# pca_embenndings represents PCA-transformed coordinates for each spot/cell
+pca_embeddings <- Embeddings(brain_coronal, reduction = "pca")
+# rows = spots or cells, columns = PCAs
+# head(pca_embeddings)
+```
+
+Once PCA is complete, we can visualize how the spatial spots are distributed in the new, reduced-dimensionality space.
+This visualization helps you see whether biological structure (like distinct tissue regions or cell populations) is already emerging in the data.
+
+```{r}
+# DimPlot() creates a scatter plot showing the positions of each spot in the selected dimensional reduction space
+# reduction = "pca" tells Seurat to plot the first two princiapl components (PC1 and PC2)
+DimPlot(brain_coronal, reduction = "pca")
+
+# optionally save the figure:
+# ggsave("figures/dim_pca.png", width = 6, height = 4)
+```
+
+To decide how many how many principal components (PCs) capture meaningful biological variation, we use the elbow plot.
+The x-axis shows the PC number and the y-axis shows the standard deviation or variability captured by each PC.
+The curve typically drops sharply at first and then levels off, forming an "elbow" shape.
+The "elbow plot" marks where additional PCs contribute diminishing returns, meaning they mostly capture noise rather than signal.
+Choose the number of PCs just before the curve flattens out.
+
+**Why this matters:** Selecting an appriopriate number of PCs ensures that downstream analyses (like clustering and spatial embedding) are driven by true biological structure, not random variability.
+
+```{r}
+# ElbowPlot() visualizes the variance explained by each principal component
+ElbowPlot(brain_coronal, ndims = 50)
+
+# optionally save the figure:
+# ggsave("figures/elbow.png", width = 6, height = 4)
+```
+
+## UMAP
+After identifying the key principal components, we can visualize the data in a lower-dimensional space using UMAP (Uniform Manifold Approximation and Projection).
+
+**Why this matters:** UMAP preserves local and global structure, meaning it keeps nearby spots close together while maintaining the broader relationships between tissue regions.
+
+UMAP reveals complex, non-linear relationships, often corresponding to meaningful biological structures,
+
+
+```{r}
+# RunUMAP() performs non-linear dimensionality reduction, mapping high-dimenional expression data.
+brain_coronal <- RunUMAP(brain_coronal,
+                      # the argument dims = 1:40 specifies that UMAP should use the first 40 principal components
+                      dims = 1:40,
+                      # FALSE simply hides progress messages for cleaner output
+                      verbose = FALSE)
+```
+
+Once UMAP has been computed, we can plot the results to visualize how spots group based on their gene expression profiles.
+Distinct clusters or regions in the UMAP often corresponds to different cell types, tissue regions, or biological states, giving an immediate visual sense of structure within the data.
+
+```{r}
+# DimPlot() displays each spatial spot as a point in UMAP space
+# reduciton = "umap" specifies that the plot should use UMAP coordinates
+DimPlot(brain_coronal, reduction = "umap")
+
+
+# optionally save the figure:
+# ggsave("figures/dim_umap.png", width = 6, height = 4)
+```
+
+## Clustering
+Now we can identify groups of spatial spots within similar gene expression patterns, a process known as clustering.
+
+**Why this matters:** This step lays the foundation for identifying spatial domains or cell-types-like region in the tissue.
+
+```{r}
+# FindNeighbors() builds a nearest-neighbor graph where each spot is connected to others with similar expression profiles (based on the first 40 principal components)
+brain_coronal <- FindNeighbors(brain_coronal,
+                           # the argument dims = 1:40 specifies that UMAP should use the first 40 principal components
+                           dims = 1:40,
+                           # FALSE simply hides progress messages for cleaner output
+                           verbose = FALSE)
+```
+
+After building the neighbor graph, we now group spots into clusters based on their shared gene expression patterns.
+
+**Why this matters:** These clusters often correspond to biological meaningful regions or cell-type domains with the tissue.
+
+```{r}
+# FindClusters() was the shared nearest neighbor (SNN) graph from the previous step to detect communities of similar spots
+brain_coronal <- FindClusters(brain_coronal,
+                           # resolution controls the granularity of clustering
+                           # lower values -> fewer, broader clusters
+                           # higher values -> more, finer clusters
+                           resolution = 0.5,
+                           # FALSE simply hides progress messages for cleaner output
+                           verbose = FALSE)
+```
+
+Now that clusters have been identified, we can visualize them directly on the tissue image to see how transcriptional domain align with physical anatomy.
+
+**Why this matters:** This plots connects gene expression patterns to their spatial context, allowing us to see how transcriptionally distinct regions map onto real tissue features.
+
+```{r}
+# SpatialDimPlot() overlays the cluster identities onto the histological tissue image
+# each spot is colored by its assigned cluster, showing where distinct molecular regions occur spatially
+# label = TRUE adds cluster labels at the center of each group for clarity
+# label.size adjust the text size
+# image.alpha sets the image transparency
+SpatialDimPlot(brain_coronal, label = TRUE, label.size = 5, image.alpha = 0.5)
+
+# optionally save the figure:
+# ggsave("figures/spatial_dim.png", width = 6, height = 4)
+```
+
+## Marker Discovery
+After clustering, we can identify the marker genes that best characterize each cluster, genes that are significantly more expressed in one cluster than in others.
+
+**Why this matters:** Marker genes help biologically annotate clusters, revealing which clusters correspond to known cell types or tissue layers.
+
+Note: This takes a few minutes to run. 
+
+```{r}
+# FindAllMarkers() performs diffreential expression analysis across all clusters to find genes that define each one
+markers_coronal <- FindAllMarkers(brain_coronal,
+                               # only.pos = TRUE restricts the ouput to positively expressed markers (genes upregulated in a cluster compared to others)
+                               only.pos = TRUE,
+                               # min.pct = 0.25 filters to include only genes expressed in at least 25% of spots within the cluster, ensuring markers are broadly representative rather than rare outliers
+                               min.pct = 0.25,
+                               # logfc.threshold = 0.25 keeps genes with at least 0.25 log fold-change in expression, focusing on biologically meaningful differences
+                               logfc.threshold = 0.25,
+                               # FALSE simply hides progress messages for cleaner output
+                               verbose = FALSE)
+```
+
+After idenitfying all marker genes, it's useful to extract the top markers for each cluster, those showing the strongest differential expression.
+
+**Why this matters:** Focusing on the top few markser simplifies interpretation and downstream visualizationm these genes are typically the most characteristic of each spatial cluster.
+They can later be used for annotation, plotting, or validatiing known tissue-specific signatures.
+
+```{r}
+top_markers_coronal <- markers_coronal |>
+  # group all marker genes by their cluster identity
+  group_by(cluster) |>
+  # select the five genes per cluster with the highest average log2 fold change, meaning the strongest upregulation relative to other clusters
+  top_n(n = 5, wt = avg_log2FC)
+
+# display the reduced table for quick inspection
+print(top_markers_coronal)
+```
+
+## Specific Visualization
+To explore how individual genes are expressed across the tissue, we can plot their spatial expression patterns directly on the histological image.
+
+**Why this matters:** Theses plots reveal the spatial distribution of gene activity, showing which tissue rergions or clusters express particular genes.
+It's a powerful way to connect molecular identity to anatomy, helping confirm or discover biologically meaningful spatial patterns.
+
+```{r}
+# SpatialFeaturePlot() overlays gene expression levels for selected genes onto the tissue image
+SpatialFeaturePlot(brain_coronal, 
+                   # features lists the genes of interest to plot
+                   features = c("Lamp5", "Lypd1"),
+                   # arranges the resulting plot into 2 column grid
+                   ncol = 2)
+
+# optionally save the figure:
+# ggsave("figures/spatial_feature.png", width = 6, height = 4)
+```
+
+## Session Info
+
+```{r}
+# session info
+sessioninfo::session_info()
+```
+
