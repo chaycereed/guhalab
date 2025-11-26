@@ -1,6 +1,6 @@
-# Computational Health Research
+# Computational Biomedical Research
 
-This repository collects my computational work for the lab, spanning data-driven analyses, reproducible workflows, and method development across biomedical, public-health, and behavioral-health domains. The focus is on building transparent, well-documented analysis pipelines and lightweight research tools that support the lab’s broader mission: using computational methods to advance biomedical research.
+This repository collects my computational work for the lab, spanning data-driven analyses, reproducible workflows, and method development across biomedical and public-health domains. The focus is on building transparent, well-documented analysis pipelines and lightweight research tools that support the lab’s broader mission: using computational methods to advance biomedical research.
 
 The projects here include exploratory analyses, methodological demos, prototype software tools, and documentation that help standardize and accelerate computational research across ongoing lab initiatives.
 
