@@ -48,12 +48,12 @@ A demonstration using the **spatialLIBD** package for:
 - interactive spatial plots  
 - preliminary inspection of spatial gene expression  
 
-Includes similar components:
+Contents include:
 
-- `.Rmd` notebook  
-- `.html` output  
-- `figures/` directory  
-- a self-contained README
+- `spatiallibd_demo.Rmd` - source notebook  
+- `spatiallibd_demo.html` - knitted, viewable analysis  
+- `figures/` - exported plots
+- `README.md` — instructions and description
 
 ---
 
