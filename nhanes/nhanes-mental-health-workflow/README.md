@@ -1,3 +1,5 @@
+# IN PROGRESS
+
 # NHANES Mental Health Workflow
 
 This folder contains a self-contained, reproducible workflow for analyzing mental-health–related variables from the NHANES survey.  
