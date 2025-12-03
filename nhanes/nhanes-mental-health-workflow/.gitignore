@@ -1,0 +1,17 @@
+# Ignore raw data
+data/*
+
+# R-specific
+.Rhistory
+.RData
+.Rproj.user/
+
+# Quarto + outputs
+*.html
+*.pdf
+outputs/*
+!outputs/figures/
+!outputs/tables/
+
+# Temporary files
+.DS_Store

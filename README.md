@@ -13,6 +13,8 @@ The projects here include exploratory analyses, methodological demos, prototype 
 ├── spatial-transcriptomics/
 │   ├── seurat-demo/
 │   └── spatiallibd-demo/
+├── nhanes/
+│   └── nhanes-mental-health-workflow/
 └── README.md
 ```
 
