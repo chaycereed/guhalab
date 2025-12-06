@@ -16,13 +16,19 @@ score_scales <- function(df) {
 
   present_items <- intersect(phq9_items, names(df))
 
+  # If none of the PHQ-9 items are present, just return df with NA columns
+  if (length(present_items) == 0) {
+    df$phq9_valid_items <- NA_integer_
+    df$phq9_score       <- NA_real_
+    df$phq9_severity    <- NA_character_
+    return(df)
+  }
+
   df |>
     dplyr::mutate(
       # how many PHQ-9 items are non-missing?
-      phq9_valid_items = dplyr::if_else(
-        length(present_items) > 0,
-        rowSums(!is.na(dplyr::across(dplyr::all_of(present_items)))),
-        NA_integer_
+      phq9_valid_items = rowSums(
+        !is.na(dplyr::across(dplyr::all_of(present_items)))
       ),
 
       # total PHQ-9 score (only if at least 7 valid items)

@@ -25,7 +25,6 @@ source("../R/load_nhanes.R")
 source("../R/clean_variables.R")
 source("../R/score_scales.R")
 source("../R/viz_templates.R")
-
 ```
 
 # Load Data
@@ -40,21 +39,21 @@ df_raw <- load_nhanes(
   use_nhanesA = TRUE  # change to TRUE for nhanesA-based loading
 )
 
-df_raw
+head(df_raw)
 ```
 
 # Clean Variables
 
 ```{r}
 df_clean <- clean_variables(df_raw)
-df_clean
+head(df_clean)
 ```
 
 # Score Scales
 
 ```{r}
 df_scored <- score_scales(df_clean)
-df_scored
+head(df_scored)
 
 dplyr::count(df_scored, phq9_severity)
 ```
@@ -62,5 +61,5 @@ dplyr::count(df_scored, phq9_severity)
 # Exploratory Analysis
 
 ```{r}
-df_scored
+head(df_scored)
 ```
