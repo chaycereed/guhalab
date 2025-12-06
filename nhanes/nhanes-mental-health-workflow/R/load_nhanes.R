@@ -32,8 +32,6 @@ load_nhanes <- function(
     "2019-2020" = "Q"
     )
 
-    cycle_code <- cycle_map[[cycles]]
-
     unknown_cycles <- setdiff(cycles, names(cycle_map))
     if (length(unknown_cycles) > 0) {
         stop(
