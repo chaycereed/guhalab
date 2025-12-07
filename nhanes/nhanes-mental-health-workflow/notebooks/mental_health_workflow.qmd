@@ -1,6 +1,6 @@
 ---
 title: "NHANES Mental Health Workflow"
-format: hmtl
+format: html
 editor: visual
 ---
 
@@ -8,11 +8,11 @@ editor: visual
 
 This workflow provides a reproducible example of analyzing mental-health-related variables from NHANES. It includes:
 
-- Importing NHANES data
-- Cleaning and preprocessing variables
-- Scoring mental health scales (e.g., PHQ-9)
-- Running exploratory analyses
-- Creating reusable visualizations
+-   Importing NHANES data
+-   Cleaning and preprocessing variables
+-   Scoring mental health scales (e.g., PHQ-9)
+-   Running exploratory analyses
+-   Creating reusable visualizations
 
 ```{r}
 library(tidyverse)
@@ -61,5 +61,41 @@ dplyr::count(df_scored, phq9_severity)
 # Exploratory Analysis
 
 ```{r}
-head(df_scored)
+df_scored |>
+  ggplot(aes(x = phq9_score)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", alpha = 0.7) +
+  labs(
+    title = "Distribution of PHQ-9 Depression Scores",
+    x = "PHQ-9 Score",
+    y = "Count"
+  ) +
+  viz_theme()
+```
+
+```{r}
+df_scored |>
+  filter(!is.na(phq9_severity)) |>
+  ggplot(aes(x = phq9_severity)) +
+  geom_bar(fill = "darkorange", alpha = 0.8) +
+  labs(
+    title = "PHQ-9 Severity Category Distribution",
+    x = "Severity",
+    y = "Count"
+  ) +
+  viz_theme()
+```
+
+```{r}
+df_scored |>
+  filter(!is.na(phq9_severity)) |>
+  ggplot(aes(x = cycle, fill = phq9_severity)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Severity Distribution by NHANES Cycle",
+    y = "Proportion",
+    x = "Cycle",
+    fill = "Severity"
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  viz_theme()
 ```
