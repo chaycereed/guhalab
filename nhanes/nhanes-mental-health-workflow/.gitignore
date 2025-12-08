@@ -7,7 +7,6 @@ data/*
 .Rproj.user/
 
 # Quarto + outputs
-*.html
 *.pdf
 outputs/*
 !outputs/figures/
