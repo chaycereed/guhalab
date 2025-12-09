@@ -63,7 +63,8 @@ dplyr::count(df_scored, phq9_severity)
 ```{r}
 df_scored |>
   ggplot(aes(x = phq9_score)) +
-  geom_histogram(binwidth = 1, fill = "steelblue", alpha = 0.7) +
+  geom_histogram(bins = 30, aes(y = ..density..), color = "black", fill = "white") +
+  geom_density(lwd = 0.5, color = "#7cc6f0", fill = "#7cc6f0", alpha = 0.4) +
   labs(
     title = "Distribution of PHQ-9 Depression Scores",
     x = "PHQ-9 Score",
@@ -74,19 +75,55 @@ df_scored |>
 
 ```{r}
 df_scored |>
+  mutate(
+    phq9_severity = factor(
+      phq9_severity,
+      levels = c(
+        "Minimal",
+        "Mild",
+        "Moderate",
+        "Moderately Severe",
+        "Severe"
+      )
+    )
+  ) |>
   filter(!is.na(phq9_severity)) |>
   ggplot(aes(x = phq9_severity)) +
-  geom_bar(fill = "darkorange", alpha = 0.8) +
+  geom_bar(
+    aes(fill = phq9_severity),
+    color = "black",
+    linewidth = 0.4,
+    alpha = 0.7
+  ) +
   labs(
     title = "PHQ-9 Severity Category Distribution",
     x = "Severity",
     y = "Count"
   ) +
+  scale_fill_manual(values = c(
+    "Minimal" = "#9be7ff",
+    "Mild" = "#7cc6f0",
+    "Moderate" = "#559de6",
+    "Moderately Severe" = "#3c6fba",
+    "Severe" = "#2d3a86"
+  )) +
   viz_theme()
 ```
 
 ```{r}
 df_scored |>
+  mutate(
+    phq9_severity = factor(
+      phq9_severity,
+      levels = c(
+        "Minimal",
+        "Mild",
+        "Moderate",
+        "Moderately Severe",
+        "Severe"
+      )
+    )
+  ) |>
   filter(!is.na(phq9_severity)) |>
   ggplot(aes(x = cycle, fill = phq9_severity)) +
   geom_bar(position = "fill") +
@@ -96,6 +133,12 @@ df_scored |>
     x = "Cycle",
     fill = "Severity"
   ) +
-  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_manual(values = c(
+    "Minimal" = "#9be7ff",
+    "Mild" = "#7cc6f0",
+    "Moderate" = "#559de6",
+    "Moderately Severe" = "#3c6fba",
+    "Severe" = "#2d3a86"
+  )) +
   viz_theme()
 ```
