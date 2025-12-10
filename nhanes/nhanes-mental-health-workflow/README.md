@@ -3,10 +3,11 @@
 This folder contains a self-contained, reproducible workflow for analyzing mental-health–related variables from the NHANES survey.  
 The notebook walks through data loading, variable cleaning, scale scoring (e.g., PHQ-9), exploratory analysis, and basic visualizations.
 
-<img src="outputs/figures/phq9_severity_score_distribution.png" height="150">
-<img src="outputs/figures/phq9_severity_category_distribution.png" height="150">
-<img src="outputs/figures/phq9_severity_distribution_by_cycle.png" height="150">
-
+<p align="left">
+  <img src="outputs/figures/phq9_severity_score_distribution.png" height="150">
+  <img src="outputs/figures/phq9_severity_category_distribution.png" height="150">
+  <img src="outputs/figures/phq9_severity_distribution_by_cycle.png" height="150">
+</p>
 ---
 
 ## Contents
