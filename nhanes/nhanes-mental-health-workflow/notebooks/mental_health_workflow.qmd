@@ -64,7 +64,7 @@ dplyr::count(df_scored, phq9_severity)
 df_scored |>
   ggplot(aes(x = phq9_score)) +
   geom_histogram(bins = 30, aes(y = ..density..), color = "black", fill = "white") +
-  geom_density(lwd = 0.5, color = "#7cc6f0", fill = "#7cc6f0", alpha = 0.4) +
+  geom_density(lwd = 0.5, color = "#559de6", fill = "#559de6", alpha = 0.4) +
   labs(
     title = "Distribution of PHQ-9 Depression Scores",
     x = "PHQ-9 Score",
